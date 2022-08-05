@@ -8,32 +8,14 @@
 
 -- BOOTSTRAP
 -- Config just below
---[[
-if event.type == "program" then
-	if mem.powermon == nil then
-		mem.powermon = {acp = 10000, i = 1}
-	end
-	
 
-	mem.locations = mem.locations or {}
-	mem.location_num = mem.location_num or 1
-	mem.group = mem.group or {}
-	mem.filter = ""
-	mem.quarry = mem.quarry or {}
-	mem.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
-end
-]]
 if mem.linebuffer == nil then
     mem.linebuffer = {}
 end
 if mem.linebuffer.jumpdrive == nil then
     mem.linebuffer.jumpdrive = {"Here the Jumpdrive's responses will be shown."}
 end
---[[
-if mem.linebuffer.quarry == nil then
-    mem.linebuffer.quarry = {"All quarry commands will be listed here"}
-end
-]]
+
 if debug then
     table.insert(touchscreen.pages, "Events")
 end
@@ -70,17 +52,7 @@ local permission = {
 -- MODULES
 local debug = true -- debug uses time and gives penalty. set to false if n9ot needed
 local help = false -- Need help?
---[[
--- QUARRY
-local quarry_directions = {"All", "North", "South", "East", "West"} -- Names of all possible Directions to Quarry first one is for all possibilitys
-local quarry_channels = {"n", "s", "o", "w"} -- digiline Channels for the quarrys, in the same order as the Names above
-local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Directions. use for tranlation
-local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
--- bootstrapping the networks
-for i, x in ipairs(power_net_names) do
-	mem.powermon[x] = mem.powermon[x] or 0
-end
-]]	
+	
 -- Touchscreen setup for debug. Change ONLY max_lines and monitor channel!
 local event_catcher = {touchscreen = {channel = "ts_ec", max_lines = 30}, monitor = {channel = "mon_ec"}}
 
@@ -96,7 +68,7 @@ local jumpdrive = {channel = "jumpdrive"}
 local touchscreen = {
     channel = "ts",
     --pages = {"Drive", "Memory", "Quarry", "System"},
-    pages = {"Drive","System"}
+    pages = {"Drive","System"},
     permissions = {"Open", "Users", "Locked"},
     linebuffer = {
         jumpdrive = {memory = mem.linebuffer.jumpdrive, max_lines = 20},
@@ -129,67 +101,7 @@ permission.check = function(user)
     end
 	return is_allowed
 end
---[[
-if event.type == "program" then
-	mem.minterrupt = mem.minterrupt or {}
-	mem.minterrupt.label = mem.minterrupt.label or ""
-end
-function minterrupt(time,label)
--- i NEED iid!
-			mem.minterrupt.label = label
-			interrupt(time)
-end
 
-function table_concat(t1, t2)
--- by Ruggila from "I wish i had an item"
-    res = {}
-    for i, v in ipairs(t1) do
-        res[i] = v
-    end
-    local n = #res
-    for i, v in ipairs(t2) do
-        res[i + n] = v
-    end
-    return res
-end
-
-function filter_locations()
--- by Ruggila from "I wish i had an item"
-    --if mem.locations ~= {} then
-    -- get list of recipes in a nice user format
-    local grouped = {}
-    local ungrouped = {}
-    for k, _ in pairs(mem.locations) do
-        local s = mem.group[k]
-        if s then
-            s = s .. " " .. k
-            if mem.filter == "" or s:find(mem.filter, 1, true) then
-                table.insert(grouped, s)
-            end
-        else
-            if mem.filter == "" or k:find(mem.filter, 1, true) then
-                table.insert(ungrouped, k)
-            end
-        end
-    end
-    --end
-    table.sort(grouped)
-    table.sort(ungrouped)
-    mem.targets = table_concat(grouped, ungrouped)
-end
-
-if event.type == "program" then
-    filter_locations()
-end
-local character = {}
-character.is_numeric = function(sChar)
-    if sChar:byte() >= 48 and sChar:byte() <= 57 then
-        return true
-    else
-        return false
-    end
-end
-]]
 local coordinates = {names = {"x", "y", "z"}}
 
 function coordinates:to_table(sInput)
@@ -540,196 +452,7 @@ local function update_page(page)
                     H = 4.5
                 }
             )
- --[[       elseif page == "Memory" then
-            -- Memory added by marghl
-            -- most of this code is from Ruggilas "I wish i had an item"
-            table.insert(message, {command = "addlabel", label = "Saved Locations", X = 0.5, Y = 0.5})
-            table.insert(
-                message,
-                {
-                    command = "addfield",
-                    X = 3,
-                    Y = 1.5,
-                    W = 6,
-                    H = 0.8,
-                    name = "filt",
-                    label = "",
-                    default = mem.filter or ""
-                }
-            )
-            table.insert(
-                message,
-                {
-                    command = "addtextlist",
-                    X = 3,
-                    Y = 2.5,
-                    W = 6,
-                    H = 10,
-                    name = "locations_list",
-                    label = "",
-                    choices = targets,
-                    listelements = mem.targets or {},
-                    selected_id = mem.itemnum or 1
-                }
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "save", name = "location", X = 9.1, Y = 12.7, W = 1.4, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "set", name = "location", X = 9.1, Y = 6.6, W = 1.4, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "delete", name = "location", X = 9.1, Y = 11.7, W = 1.4, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "filter", name = "location", X = 9.1, Y = 1.5, W = 1.4, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addfield", X = 3, Y = 12.7, W = 6, H = 0.8, name = "save", label = "", default = ""}
-            )
-        elseif page == "Quarry" then
-            -- Quarry control and autoquerry
-            -- this mess is made by marghl ;)
-            table.insert(
-                message,
-                {
-                    command = "addtextlist",
-                    label = "Directon:",
-                    name = "direction",
-                    listelements = quarry_directions,
-                    selected_id = mem.quarry.direction,
-                    X = 3,
-                    Y = 0.5,
-                    H = 2.8,
-                    W = 2
-                }
-            )
-            table.insert(message, {command = "addlabel", label = "Manual Controls:", X = 5.5, Y = 0.5})
-            table.insert(
-                message,
-                {command = "addbutton", label = "ON", name = "manual", X = 5.5, Y = 1, W = 1.5, H = 1}
-            )
-            table.insert(message, {command = "addbutton", label = "OFF", name = "manual", X = 7, Y = 1, W = 1.5, H = 1})
-            table.insert(
-                message,
-                {command = "addbutton", label = "Reset", name = "manual", X = 8.5, Y = 1, W = 1.5, H = 1}
-            )
-            table.insert(
-                message,
-                {command = "addfield", label = "Radius", name = "radius", X = 5.5, Y = 2.5, W = 1.5, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addfield", label = "Depth", name = "depth", X = 7, Y = 2.5, W = 1.5, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "Set", name = "manual", X = 8.5, Y = 2.5, W = 1.5, H = 0.8}
-            )
-            table.insert(message, {command = "addlabel", label = "AutoQuarry", X = 3, Y = 4})
-            table.insert(message, {command = "addlabel", label = "Travel", X = 3, Y = 4.7})
-            table.insert(
-                message,
-                {
-                    command = "addtextlist",
-                    name = "auto_travel",
-                    listelements = cardinal_directions,
-                    selected_id = mem.auto.travel,
-                    X = 3,
-                    Y = 5,
-                    W = 1.8,
-                    H = 2.2
-                }
-            )
-            table.insert(message, {command = "addlabel", label = "Quarry", X = 5, Y = 4.7})
-            table.insert(
-                message,
-                {
-                    command = "addtextlist",
-                    name = "auto_quarry",
-                    listelements = cardinal_directions,
-                    selected_id = mem.auto.quarry,
-                    X = 5,
-                    Y = 5,
-                    W = 1.8,
-                    H = 2.2
-                }
-            )
-            table.insert(
-                message,
-                {
-                    command = "addfield",
-                    label = "Distance",
-                    name = "auto_distance",
-                    default = tostring(mem.auto.distance),
-                    X = 7,
-                    Y = 5,
-                    W = 1.4,
-                    H = 0.8
-                }
-            )
-            table.insert(
-                message,
-                {
-                    command = "addfield",
-                    label = "Radius",
-                    name = "auto_radius",
-                    default = tostring(mem.auto.radius),
-                    X = 7,
-                    Y = 6.4,
-                    W = 1.4,
-                    H = 0.8
-                }
-            )
-            table.insert(
-                message,
-                {
-                    command = "addfield",
-                    label = "Steps",
-                    name = "auto_steps",
-                    default = tostring(mem.auto.steps),
-                    X = 8.5,
-                    Y = 5,
-                    W = 1.4,
-                    H = 0.8
-                }
-            )
-            table.insert(
-                  message,
-                  {command = "addbutton",
-                  label = "Set",
-                  name = "auto",
-                  X = 8.5,
-                  Y = 6.4,
-                  W = 1.5,
-                  H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "START", name = "auto", X = 7, Y = 7.5, W = 3, H = 0.8}
-            )
-            table.insert(
-                message,
-                {command = "addbutton", label = "STOP", name = "auto", X = 3, Y = 7.5, W = 3, H = 0.8}
-            )
 
-            table.insert(
-                message,{
-                  command = "addtextarea",
-                  name = "display",
-                  label = "Quarry Log:",
-                  default = table.concat(mem.linebuffer.quarry, "\n"),
-                  X = 3,
-                  Y = 9,
-                  W = 7.5,
-                  H = 4.5
-                }
-            )   ]]
         else
         -- handler for missing pages
             table.insert(
@@ -963,160 +686,7 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
             update_page("Drive")
         end
     elseif touchscreen.pages[mem.page] == "Memory" and permission.check(event.msg.clicker) then
-        --[[ Memory by marghl
-        -- based on "i wish i had an item" by Ruggila
-        -- TODO: add groups?
-        local s = event.msg.locations_list or ""
-
-            --filter_locations()
-            if string.sub(s, 1, 4) == "CHG:" then
-                -- extract the index number in the mem.targets table
-                --s = s:sub(5)
-                local n = tonumber(string.sub(s, 5))
-                if n then
-                    mem.itemnum = n
-                    mem.item = mem.targets[n] or ""
-                --digiline_send("mon_ec", mem.item)
-                end
-            end
-            if event.msg.location == "save" then
-                local save_name = ""
-                if event.msg.save == "" or nil then
-                    save_name = get_time_string()
-                else
-                    save_name = event.msg.save
-                end
-                mem.locations[save_name] = mem.jumpdrive.target
-            elseif event.msg.location == "delete" then
-                mem.locations[mem.item] = nil
-            elseif event.msg.location == "set" then
-                mem.jumpdrive.target = mem.locations[mem.item]
-                mem.page = 1
-                update_page("Drive")
-            elseif event.msg.location == "filter" then
-                mem.filter = event.msg.filt
-            end
-            filter_locations()
-            update_page("Memory")
-    elseif touchscreen.pages[mem.page] == "Quarry" and permission.check(event.msg.clicker) then
-    		-- Quarry
-    		-- by marghl
-    		-- TODO:	- get the autojump running
-    		--				- if automode done then disable quarrys
-    		--				- make it go in circles?
-        local page_needs_update = false
-        if event.msg.direction then
-            local d = tonumber(string.sub(event.msg.direction, 5))
-            --send_to_monitors("Richtung geaendert!")
-            mem.quarry.direction = d
-            add_line_to_buffer(touchscreen.linebuffer.quarry, "Selected direction: " .. quarry_directions[d])
-            page_needs_update = true
-        elseif event.msg.manual then
-            local m = event.msg.manual
-            local d_name = quarry_directions[mem.quarry.direction]
-            local d = (mem.quarry.direction - 1)
-            local a = false
-            local a_name = ""
-            if m == "ON" then
-                a = {command = "on"}
-                a_name = "Activating"
-            elseif m == "OFF" then
-                a = {command = "off"}
-                a_name = "Deactivating"
-            elseif m == "Reset" then
-                a = {command = "reset"}
-                a_name = "Resetting"
-            elseif m == "Set" then
-                local v = tonumber(event.msg.radius)
-                if v then
-                    a = {command = "radius", value = v}
-                    a_name = "Setting radius to " .. event.msg.radius .. " at"
-                end
-                if event.msg.depth then
-                    add_line_to_buffer(touchscreen.linebuffer.quarry, "Setting the depth is not supported by quarry")
-                end
-            end
-            if d == 0 and a then
-                for i, d in ipairs(quarry_channels) do
-                    digiline_send(d, a)
-                end
-                add_line_to_buffer(touchscreen.linebuffer.quarry, a_name .. " ALL manualy!")
-            else
-                if a then
-                    digiline_send(quarry_channels[d], a)
-                    add_line_to_buffer(touchscreen.linebuffer.quarry, a_name .. " " .. d_name .. " manualy!")
-                end
-            end
-            page_needs_update = true
-        elseif event.msg.auto_travel then
-            mem.auto.travel = tonumber(string.sub(event.msg.auto_travel, 5))
-        elseif event.msg.auto_quarry then
-            mem.auto.quarry = tonumber(string.sub(event.msg.auto_quarry, 5))
-        elseif event.msg.auto then
-            --autoquarry setup
-            local m = event.msg
-            local ad = tonumber(m.auto_distance) or 17
-            local ar = tonumber(m.auto_radius) or 8
-            local as = tonumber(m.auto_steps) or 1
-            if m.auto == "Set" and not mem.auto.active then
-                for i, d in ipairs(quarry_channels) do
-                    digiline_send(d, "off")
-                end
-                add_line_to_buffer(touchscreen.linebuffer.quarry, "\nDeactivating all quarrys for automode setup\n")
-                --setup
-                if ad < (mem.jumpdrive.radius * 2 + 1) then
-                    ad = (mem.jumpdrive.radius * 2 + 1)
-                end
-                if ar < 1 then
-                    ar = 1
-                elseif ar > 8 then
-                    ar = 8
-                end
-                if as < 1 then
-                    as = 1
-                elseif as > 10 then
-                    as = 10
-                end
-                mem.auto.distance = tostring(ad) or "17"
-                if tostring(ar) ~= mem.auto.radius then
-                    mem.auto.radius = tostring(ar)
-                    digiline_send(quarry_channels[mem.auto.quarry], {command = "radius", value = ar})
-                end
-                mem.auto.steps = as
-                add_line_to_buffer(
-                    touchscreen.linebuffer.quarry,
-                    "\n---------------------------- \nDid set the AutoQuarry to: \nFlight direction: " ..
-                        cardinal_directions[mem.auto.travel] ..
-                            "\nFlight distance:  " ..
-                                mem.auto.distance ..
-                                    "\nFlight steps: " ..
-                                        mem.auto.steps ..
-                                            "\nQuarry direction: " ..
-                                                cardinal_directions[mem.auto.quarry] ..
-                                                    "\nQuarry radius:    " ..
-                                                        mem.auto.radius ..
-                                                            "\nWhats next?\n----------------------------\n"
-                )
-                -- TODO: interrupt(10) maybe?
-            elseif m.auto == "Set" and mem.auto.active then
-                add_line_to_buffer(touchscreen.linebuffer.quarry, "No setup while active!\nStop Automode first")
-            elseif m.auto == "STOP" then
-                digiline_send(quarry_channels[mem.auto.quarry], "off")
-                mem.auto.active = false
-                add_line_to_buffer(touchscreen.linebuffer.quarry, "\nAutomode deactivated\n")
-            elseif m.auto == "START" then
-            	digiline_send("mon_ec","Auto: start")
-                mem.auto.active = true
-                digiline_send(quarry_channels[mem.auto.quarry], "on")
-                --digiline_send("powermon", "activate")
-                add_line_to_buffer(touchscreen.linebuffer.quarry, "\nAuto mode activated!. \n")
-                minterrupt(10,"auto_active")
-            end
-            page_needs_update = true
-        end
-        if page_needs_update then
-            update_page("Quarry")
-        end]]
+       
    elseif not permission.check(event.msg.clicker) then
       digiline_send("mon_ec","m: "..event.msg.clicker..":\nnot authorised")
    end
@@ -1184,86 +754,7 @@ if event.type == "digiline" and event.channel == jumpdrive.channel and event.msg
 end
 
 -------------------------
---[[ AutoQuarry
 
-if event.type == "interrupt" and mem.minterrupt.label == "auto_jump" and mem.auto.active then
--- TODO: make this interrupt somehow
---		needs local function multinterrupt(time,label){ -- if you dont give iid i just take it ;P
---			mem.multinterrupt.label = label
---			interrupt(time)}
---		if event.type == "interrupt" then
---			local l = mem.multinterrupt.label
---			if l == "blah" then
---				blah()
---			elseif l == "blubb" then
---				blubb()
---			else
---				whatever()
---			end
-
-    --we jump now
-    digiline_send("mon_ec", "main: AC prejump") --crude debug
-    --from instant jump code FeXoR
-    --         mem.jumpdrive.target.x = mem.jumpdrive.position.x + mem.instant_jump.distance
-    --       digiline_send(jumpdrive.channel, merge_shallow_tables({command = "set", formupdate = false}, mem.jumpdrive.target))
-    --     digiline_send(jumpdrive.channel, {command = "jump"})
-    if mem.auto.travel == 1 then
-        mem.jumpdrive.target.z = mem.jumpdrive.position.z + tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 2 then
-        mem.jumpdrive.target.z = mem.jumpdrive.position.z - tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 3 then
-        mem.jumpdrive.target.x = mem.jumpdrive.position.x + tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 4 then
-        mem.jumpdrive.target.x = mem.jumpdrive.position.x - tonumber(mem.auto.distance)
-    end
-    -- maybe this will work?
-     
-    if mem.auto.steps > 0 then
-        add_line_to_buffer(touchscreen.linebuffer.quarry, "Jumping in automode")
-	mem.auto.steps = mem.auto.steps - 1
-	update_page("Quarry")
-        digiline_send(
-            jumpdrive.channel,
-            merge_shallow_tables({command = "set", formupdate = false}, mem.jumpdrive.target)
-        )
-        digiline_send(jumpdrive.channel, {command = "jump"})
-        digiline_send("mon_ec","AUTOJUMP") -- crude debug
-        
-     
-        minterrupt(20,"auto_active")
-    else
-        mem.auto.active = false
-        add_line_to_buffer(touchscreen.linebuffer.quarry, "\nDONE\nAuto mode deactivated! \n")
-        digiline_send(quarry_channels[mem.auto.quarry], "off")
-        digiline_send("mon_ec", "main: AC done") -- crude debug
-    end
-   
-end
-
-if event.type == "interrupt" and mem.minterrupt.label == "auto_active" then
-	digiline_send("mon_ec","ASK: "..power_net_names[mem.powermon.i])
-	digiline_send(power_net_names[mem.powermon.i],"GET")
-end
-
-if event.type == "digiline" and event.channel == power_net_names[mem.powermon.i] then
-	digiline_send("mon_"..power_net_names[mem.powermon.i],"Network: ".. power_net_names[mem.powermon.i] .."\n\nSupply: ".. math.floor(event.msg.supply / 1000)..
-		" kEU\nDemand: ".. math.floor(event.msg.demand / 1000)..
-		" kEU\nLAG: ".. (event.msg.lag / 1000)..
-		" ms\nBattery: ".. tostring(math.floor(event.msg.battery_charge / event.msg.battery_charge_max * 1000) / 10)..
-		" %"
-		)
-	mem.powermon[power_net_names[mem.powermon.i] ] = event.msg.demand
-	local demand = 0
-	for i, x in ipairs(power_net_names) do
-		demand = mem.powermon[x] + demand
-	end
-	mem.powermon.i = (mem.powermon.i % #power_net_names) +1
-	if demand == 0 then
-		minterrupt(5,"auto_jump")
-	else
-		minterrupt(20,"auto_active")
-	end
-end
 -- ########
 -- Event Catcher
 -- ########
@@ -1278,7 +769,7 @@ end
 if debug then
     send_to_monitors(event)
     update_page("Events")
-end ]]
+end 
 
 -- ########
 -- Count events
