@@ -8,19 +8,19 @@
 
 -- BOOTSTRAP
 -- Config just below
+local debug = true
 
 if event.type == "program" then
-	if mem.powermon == nil then
-		mem.powermon = {acp = 10000, i = 1}
-	end
 	
-
-	mem.locations = mem.locations or {}
-	mem.location_num = mem.location_num or 1
-	mem.group = mem.group or {}
-	mem.filter = ""
+	
+	mem.m = mem.m or {}
+	mem.m.locations = mem.m.locations or {}
+	mem.m.location_num = mem.m.location_num or 1
+	mem.m.group = mem.m.group or {}
+	mem.m.filter = ""
 	mem.quarry = mem.quarry or {}
-	mem.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
+	mem.quarry.powermon = mem.quarry.powermon or {acp = 10000, i = 1}
+	mem.quarry.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
 end
 
 if mem.linebuffer == nil then
@@ -34,16 +34,14 @@ if mem.linebuffer.quarry == nil then
     mem.linebuffer.quarry = {"All quarry commands will be listed here"}
 end
 
-if debug then
-    table.insert(touchscreen.pages, "Events")
-end
-if help then
-    table.insert(touchscreen.pages, "Help")
-end
 
 if mem.page == nil then
     mem.page = 1
 end
+if mem.subpage == nil then
+	mem.subpage = 1
+end
+
 if mem.ts_lock == nil then
     mem.ts_lock = 2
 end
@@ -64,7 +62,7 @@ end
 -- USER PERMISSIONS
 local permission = {
     authorised_users = {"marghl"},
-    ignore = false -- leave this to false! if true no permission will be checked!
+    ignore = true -- leave this to false! if true no permission will be checked!
 }
 
 -- MODULES
@@ -78,7 +76,7 @@ local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Direc
 local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
 -- bootstrapping the networks
 for i, x in ipairs(power_net_names) do
-	mem.powermon[x] = mem.powermon[x] or 0
+	mem.quarry.powermon[x] = mem.quarry.powermon[x] or 0
 end
 	
 -- Touchscreen setup for debug. Change ONLY max_lines and monitor channel!
@@ -103,6 +101,12 @@ local touchscreen = {
     }
 }
 
+if debug then
+    table.insert(touchscreen.pages, "Events")
+end
+if help then
+    table.insert(touchscreen.pages, "Help")
+end
 
 
 
@@ -154,19 +158,19 @@ end
 
 function filter_locations()
 -- by Ruggila from "I wish i had an item"
-    --if mem.locations ~= {} then
+    --if mem.m.locations ~= {} then
     -- get list of recipes in a nice user format
     local grouped = {}
     local ungrouped = {}
-    for k, _ in pairs(mem.locations) do
-        local s = mem.group[k]
+    for k, _ in pairs(mem.m.locations) do
+        local s = mem.m.group[k]
         if s then
             s = s .. " " .. k
-            if mem.filter == "" or s:find(mem.filter, 1, true) then
+            if mem.m.filter == "" or s:find(mem.m.filter, 1, true) then
                 table.insert(grouped, s)
             end
         else
-            if mem.filter == "" or k:find(mem.filter, 1, true) then
+            if mem.m.filter == "" or k:find(mem.m.filter, 1, true) then
                 table.insert(ungrouped, k)
             end
         end
@@ -174,7 +178,7 @@ function filter_locations()
     --end
     table.sort(grouped)
     table.sort(ungrouped)
-    mem.targets = table_concat(grouped, ungrouped)
+    mem.m.targets = table_concat(grouped, ungrouped)
 end
 
 if event.type == "program" then
@@ -335,27 +339,27 @@ local function update_page(page)
         local message = {
             {command = "clear"},
             {command = "set", real_coordinates = true, width = 11, height = 14},
-            --{command = "addlabel", label = "Page:", X=0,Y=0},
+            {command = "addlabel", label = "Page:", X=0.5,Y=0.5},
             {
                 command = "addtextlist",
                 name = "page",
                 listelements = touchscreen.pages,
                 selected_id = mem.page,
                 X = 0.5,
-                Y = 9,
+                Y = 1,
                 W = 2,
                 H = 2
             },
-            --{command = "addlabel", label = "Lock:", X=0.5,Y=11.5},
+            {command = "addlabel", label = "Lock:", X=0.5,Y=11.5},
             {
                 command = "addtextlist",
                 name = "lock",
                 listelements = touchscreen.permissions,
                 selected_id = mem.ts_lock,
                 X = 0.5,
-                Y = 11.5,
+                Y = 12,
                 W = 2,
-                H = 2
+                H = 1.6
             }
         }
         -- Events
@@ -540,20 +544,28 @@ local function update_page(page)
                 }
             )
         elseif page == "Memory" then
+		table.insert(message,{command = "addtextlist",
+			label = "subpages",
+			name = "subpages",
+			 X = 0.5,
+			Y = 3.5,
+			W = 2,
+			H = 2,
+			listelements =  {"set search" , "save delete" , "backup"},
+			selected_id = mem.subpage})
             -- Memory added by marghl
             -- most of this code is from Ruggilas "I wish i had an item"
-            table.insert(message, {command = "addlabel", label = "Saved Locations", X = 0.5, Y = 0.5})
+            table.insert(message, {command = "addlabel", label = "Saved Locations", X = 3, Y = 0.5})
             table.insert(
-                message,
-                {
+                message, {
                     command = "addfield",
                     X = 3,
-                    Y = 1.5,
+                    Y = 6.1,
                     W = 6,
                     H = 0.8,
                     name = "filt",
                     label = "",
-                    default = mem.filter or ""
+                    default = mem.m.filter or ""
                 }
             )
             table.insert(
@@ -561,36 +573,56 @@ local function update_page(page)
                 {
                     command = "addtextlist",
                     X = 3,
-                    Y = 2.5,
-                    W = 6,
-                    H = 10,
+                    Y = 1,
+                    W = 7.5,
+                    H = 5,
                     name = "locations_list",
                     label = "",
-                    choices = targets,
-                    listelements = mem.targets or {},
+                    --choices = targets,
+                    listelements = mem.m.targets or {},
                     selected_id = mem.itemnum or 1
                 }
             )
-            table.insert(
+	    table.insert(
+                message,
+                {command = "addbutton", label = "filter", name = "location", X = 9.1, Y = 6.1, W = 1.4, H = 0.8}
+            )
+	    --[[if mem.m.locations[mem.item].pos then
+	    table.insert(message, {command="addlabel",
+		label = "Coordinates : "  .. tostring(mem.m.locations[mem.item].pos.x) or "none" .. ", "
+							.. tostring(mem.m.locations[mem.item].pos.y) or "none" ..", "
+							..tostring(mem.m.locations[mem.item].pos.z) or "none",
+		X= 3,
+		Y= 7.2}
+	   )
+	   end]]
+           --- move to subpage
+	   if mem.subpage == 1 then
+		 table.insert(message, {command = "addbutton", 
+			label = "set as target" ,
+			name = "location",
+			X = 3, 
+			Y = 13, 
+			W = 7.5, 
+			H = 0.8}
+            )
+	    else
+	   table.insert(
                 message,
                 {command = "addbutton", label = "save", name = "location", X = 9.1, Y = 12.7, W = 1.4, H = 0.8}
             )
-            table.insert(
-                message,
-                {command = "addbutton", label = "set", name = "location", X = 9.1, Y = 6.6, W = 1.4, H = 0.8}
-            )
+           
             table.insert(
                 message,
                 {command = "addbutton", label = "delete", name = "location", X = 9.1, Y = 11.7, W = 1.4, H = 0.8}
             )
-            table.insert(
-                message,
-                {command = "addbutton", label = "filter", name = "location", X = 9.1, Y = 1.5, W = 1.4, H = 0.8}
-            )
+            
             table.insert(
                 message,
                 {command = "addfield", X = 3, Y = 12.7, W = 6, H = 0.8, name = "save", label = "", default = ""}
             )
+	    table.insert(message, {command = "addlabel", X=3, Y=10,label = "SUBPAGE "..mem.subpage})
+	    end
         elseif page == "Quarry" then
             -- Quarry control and autoquerry
             -- this mess is made by marghl ;)
@@ -638,7 +670,7 @@ local function update_page(page)
                     command = "addtextlist",
                     name = "auto_travel",
                     listelements = cardinal_directions,
-                    selected_id = mem.auto.travel,
+                    selected_id = mem.quarry.auto.travel,
                     X = 3,
                     Y = 5,
                     W = 1.8,
@@ -652,7 +684,7 @@ local function update_page(page)
                     command = "addtextlist",
                     name = "auto_quarry",
                     listelements = cardinal_directions,
-                    selected_id = mem.auto.quarry,
+                    selected_id = mem.quarry.auto.quarry,
                     X = 5,
                     Y = 5,
                     W = 1.8,
@@ -665,7 +697,7 @@ local function update_page(page)
                     command = "addfield",
                     label = "Distance",
                     name = "auto_distance",
-                    default = tostring(mem.auto.distance),
+                    default = tostring(mem.quarry.auto.distance),
                     X = 7,
                     Y = 5,
                     W = 1.4,
@@ -678,7 +710,7 @@ local function update_page(page)
                     command = "addfield",
                     label = "Radius",
                     name = "auto_radius",
-                    default = tostring(mem.auto.radius),
+                    default = tostring(mem.quarry.auto.radius),
                     X = 7,
                     Y = 6.4,
                     W = 1.4,
@@ -691,7 +723,7 @@ local function update_page(page)
                     command = "addfield",
                     label = "Steps",
                     name = "auto_steps",
-                    default = tostring(mem.auto.steps),
+                    default = tostring(mem.quarry.auto.steps),
                     X = 8.5,
                     Y = 5,
                     W = 1.4,
@@ -755,6 +787,13 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
         local i_page = tonumber(string.sub(event.msg.page, 5))
         if i_page ~= mem.page then
             mem.page = i_page
+	    mem.subpage = 1
+            update_page(touchscreen.pages[mem.page])
+        end
+	elseif event.msg.subpages ~= nil then
+        local i_subpage = tonumber(string.sub(event.msg.subpages, 5))
+        if i_subpage ~= mem.subpagepage then
+            mem.subpage = i_subpage
             update_page(touchscreen.pages[mem.page])
         end
     elseif event.msg.lock ~= nil then
@@ -969,31 +1008,31 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
 
             --filter_locations()
             if string.sub(s, 1, 4) == "CHG:" then
-                -- extract the index number in the mem.targets table
+                -- extract the index number in the mem.m.targets table
                 --s = s:sub(5)
                 local n = tonumber(string.sub(s, 5))
                 if n then
                     mem.itemnum = n
-                    mem.item = mem.targets[n] or ""
+                    mem.item = mem.m.targets[n] or ""
                 --digiline_send("mon_ec", mem.item)
                 end
             end
-            if event.msg.location == "save" then
+            if event.msg.location == "set as target" then
+                mem.jumpdrive.target = mem.m.locations[mem.item].pos
+                mem.page = 1
+                update_page("Drive")
+            elseif event.msg.location == "delete" then
+                mem.m.locations[mem.item] = nil
+            elseif event.msg.location == "save" then
                 local save_name = ""
                 if event.msg.save == "" or nil then
                     save_name = get_time_string()
                 else
                     save_name = event.msg.save
                 end
-                mem.locations[save_name] = mem.jumpdrive.target
-            elseif event.msg.location == "delete" then
-                mem.locations[mem.item] = nil
-            elseif event.msg.location == "set" then
-                mem.jumpdrive.target = mem.locations[mem.item]
-                mem.page = 1
-                update_page("Drive")
+                mem.m.locations[save_name] = {pos = mem.jumpdrive.target,}
             elseif event.msg.location == "filter" then
-                mem.filter = event.msg.filt
+                mem.m.filter = event.msg.filt
             end
             filter_locations()
             update_page("Memory")
@@ -1048,16 +1087,16 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
             end
             page_needs_update = true
         elseif event.msg.auto_travel then
-            mem.auto.travel = tonumber(string.sub(event.msg.auto_travel, 5))
+            mem.quarry.auto.travel = tonumber(string.sub(event.msg.auto_travel, 5))
         elseif event.msg.auto_quarry then
-            mem.auto.quarry = tonumber(string.sub(event.msg.auto_quarry, 5))
+            mem.quarry.auto.quarry = tonumber(string.sub(event.msg.auto_quarry, 5))
         elseif event.msg.auto then
             --autoquarry setup
             local m = event.msg
             local ad = tonumber(m.auto_distance) or 17
             local ar = tonumber(m.auto_radius) or 8
             local as = tonumber(m.auto_steps) or 1
-            if m.auto == "Set" and not mem.auto.active then
+            if m.auto == "Set" and not mem.quarry.auto.active then
                 for i, d in ipairs(quarry_channels) do
                     digiline_send(d, "off")
                 end
@@ -1076,37 +1115,37 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
                 elseif as > 10 then
                     as = 10
                 end
-                mem.auto.distance = tostring(ad) or "17"
-                if tostring(ar) ~= mem.auto.radius then
-                    mem.auto.radius = tostring(ar)
-                    digiline_send(quarry_channels[mem.auto.quarry], {command = "radius", value = ar})
+                mem.quarry.auto.distance = tostring(ad) or "17"
+                if tostring(ar) ~= mem.quarry.auto.radius then
+                    mem.quarry.auto.radius = tostring(ar)
+                    digiline_send(quarry_channels[mem.quarry.auto.quarry], {command = "radius", value = ar})
                 end
-                mem.auto.steps = as
+                mem.quarry.auto.steps = as
                 add_line_to_buffer(
                     touchscreen.linebuffer.quarry,
                     "\n---------------------------- \nDid set the AutoQuarry to: \nFlight direction: " ..
-                        cardinal_directions[mem.auto.travel] ..
+                        cardinal_directions[mem.quarry.auto.travel] ..
                             "\nFlight distance:  " ..
-                                mem.auto.distance ..
+                                mem.quarry.auto.distance ..
                                     "\nFlight steps: " ..
-                                        mem.auto.steps ..
+                                        mem.quarry.auto.steps ..
                                             "\nQuarry direction: " ..
-                                                cardinal_directions[mem.auto.quarry] ..
+                                                cardinal_directions[mem.quarry.auto.quarry] ..
                                                     "\nQuarry radius:    " ..
-                                                        mem.auto.radius ..
+                                                        mem.quarry.auto.radius ..
                                                             "\nWhats next?\n----------------------------\n"
                 )
                 -- TODO: interrupt(10) maybe?
-            elseif m.auto == "Set" and mem.auto.active then
+            elseif m.auto == "Set" and mem.quarry.auto.active then
                 add_line_to_buffer(touchscreen.linebuffer.quarry, "No setup while active!\nStop Automode first")
             elseif m.auto == "STOP" then
-                digiline_send(quarry_channels[mem.auto.quarry], "off")
-                mem.auto.active = false
+                digiline_send(quarry_channels[mem.quarry.auto.quarry], "off")
+                mem.quarry.auto.active = false
                 add_line_to_buffer(touchscreen.linebuffer.quarry, "\nAutomode deactivated\n")
             elseif m.auto == "START" then
             	digiline_send("mon_ec","Auto: start")
-                mem.auto.active = true
-                digiline_send(quarry_channels[mem.auto.quarry], "on")
+                mem.quarry.auto.active = true
+                digiline_send(quarry_channels[mem.quarry.auto.quarry], "on")
                 --digiline_send("powermon", "activate")
                 add_line_to_buffer(touchscreen.linebuffer.quarry, "\nAuto mode activated!. \n")
                 minterrupt(10,"auto_active")
@@ -1185,7 +1224,7 @@ end
 -------------------------
 -- AutoQuarry
 
-if event.type == "interrupt" and mem.minterrupt.label == "auto_jump" and mem.auto.active then
+if event.type == "interrupt" and mem.minterrupt.label == "auto_jump" and mem.quarry.auto.active then
 -- TODO: make this interrupt somehow
 --		needs local function multinterrupt(time,label){ -- if you dont give iid i just take it ;P
 --			mem.multinterrupt.label = label
@@ -1206,53 +1245,57 @@ if event.type == "interrupt" and mem.minterrupt.label == "auto_jump" and mem.aut
     --         mem.jumpdrive.target.x = mem.jumpdrive.position.x + mem.instant_jump.distance
     --       digiline_send(jumpdrive.channel, merge_shallow_tables({command = "set", formupdate = false}, mem.jumpdrive.target))
     --     digiline_send(jumpdrive.channel, {command = "jump"})]]
-    if mem.auto.travel == 1 then
-        mem.jumpdrive.target.z = mem.jumpdrive.position.z + tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 2 then
-        mem.jumpdrive.target.z = mem.jumpdrive.position.z - tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 3 then
-        mem.jumpdrive.target.x = mem.jumpdrive.position.x + tonumber(mem.auto.distance)
-    elseif mem.auto.travel == 4 then
-        mem.jumpdrive.target.x = mem.jumpdrive.position.x - tonumber(mem.auto.distance)
+    if mem.quarry.auto.travel == 1 then
+        mem.jumpdrive.target.z = mem.jumpdrive.position.z + tonumber(mem.quarry.auto.distance)
+    elseif mem.quarry.auto.travel == 2 then
+        mem.jumpdrive.target.z = mem.jumpdrive.position.z - tonumber(mem.quarry.auto.distance)
+    elseif mem.quarry.auto.travel == 3 then
+        mem.jumpdrive.target.x = mem.jumpdrive.position.x + tonumber(mem.quarry.auto.distance)
+    elseif mem.quarry.auto.travel == 4 then
+        mem.jumpdrive.target.x = mem.jumpdrive.position.x - tonumber(mem.quarry.auto.distance)
     end
-
-    if mem.auto.steps > 0 then
+    -- maybe this will work?
+     
+    if mem.quarry.auto.steps > 0 then
         add_line_to_buffer(touchscreen.linebuffer.quarry, "Jumping in automode")
+	mem.quarry.auto.steps = mem.quarry.auto.steps - 1
+	update_page("Quarry")
         digiline_send(
             jumpdrive.channel,
             merge_shallow_tables({command = "set", formupdate = false}, mem.jumpdrive.target)
         )
         digiline_send(jumpdrive.channel, {command = "jump"})
         digiline_send("mon_ec","AUTOJUMP") -- crude debug
-        mem.auto.steps = mem.auto.steps - 1
+        
+     
         minterrupt(20,"auto_active")
     else
-        mem.auto.active = false
+        mem.quarry.auto.active = false
         add_line_to_buffer(touchscreen.linebuffer.quarry, "\nDONE\nAuto mode deactivated! \n")
-        digiline_send(quarry_channels[mem.auto.quarry], "off")
+        digiline_send(quarry_channels[mem.quarry.auto.quarry], "off")
         digiline_send("mon_ec", "main: AC done") -- crude debug
     end
-    update_page("Quarry")
+   
 end
 
 if event.type == "interrupt" and mem.minterrupt.label == "auto_active" then
-	digiline_send("mon_ec","ASK: "..power_net_names[mem.powermon.i])
-	digiline_send(power_net_names[mem.powermon.i],"GET")
+	digiline_send("mon_ec","ASK: "..power_net_names[mem.quarry.powermon.i])
+	digiline_send(power_net_names[mem.quarry.powermon.i],"GET")
 end
 
-if event.type == "digiline" and event.channel == power_net_names[mem.powermon.i] then
-	digiline_send("mon_"..power_net_names[mem.powermon.i],"Network: ".. power_net_names[mem.powermon.i] .."\n\nSupply: ".. math.floor(event.msg.supply / 1000)..
+if event.type == "digiline" and event.channel == power_net_names[mem.quarry.powermon.i] then
+	digiline_send("mon_"..power_net_names[mem.quarry.powermon.i],"Network: ".. power_net_names[mem.quarry.powermon.i] .."\n\nSupply: ".. math.floor(event.msg.supply / 1000)..
 		" kEU\nDemand: ".. math.floor(event.msg.demand / 1000)..
 		" kEU\nLAG: ".. (event.msg.lag / 1000)..
 		" ms\nBattery: ".. tostring(math.floor(event.msg.battery_charge / event.msg.battery_charge_max * 1000) / 10)..
 		" %"
 		)
-	mem.powermon[power_net_names[mem.powermon.i]] = event.msg.demand
+	mem.quarry.powermon[power_net_names[mem.quarry.powermon.i]] = event.msg.demand
 	local demand = 0
 	for i, x in ipairs(power_net_names) do
-		demand = mem.powermon[x] + demand
+		demand = mem.quarry.powermon[x] + demand
 	end
-	mem.powermon.i = (mem.powermon.i % #power_net_names) +1
+	mem.quarry.powermon.i = (mem.quarry.powermon.i % #power_net_names) +1
 	if demand == 0 then
 		minterrupt(5,"auto_jump")
 	else
