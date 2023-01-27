@@ -8,25 +8,7 @@
 
 -- BOOTSTRAP
 -- Config just below
-local debug = true
--- CONFIGURE
--- TODO: clean this mess up
 
--- USER PERMISSIONS
-local permission = {
-    authorised_users = {"marghl"},
-    ignore = true -- leave this to false! if true no permission will be checked!
-}
-
--- MODULES
-local debug = true -- debug uses time and gives penalty. set to false if n9ot needed
-local help = false -- Need help?
-
--- QUARRY
-local quarry_directions = {"All", "North", "South", "East", "West"} -- Names of all possible Directions to Quarry first one is for all possibilitys
-local quarry_channels = {"n", "s", "o", "w"} -- digiline Channels for the quarrys, in the same order as the Names above
-local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Directions. use for tranlation
-local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
 -- bootstrapping the networks
 
 	
@@ -47,7 +29,7 @@ local touchscreen = {
     pages = {"Drive", "Memory", "Quarry", "System"},
     permissions = {"Open", "Users", "Locked"},
     linebuffer = {
-        jumpdrive = {memory = mem.linebuffer.jumpdrive, max_lines = 20},
+        jumpdrive = {memory = mem.linebuffer.jumpdrive , max_lines = 20},
         quarry = {memory = mem.linebuffer.quarry, max_lines = 20}
     }
 }
@@ -79,7 +61,25 @@ if event.type == "program" then
 	mem.minterrupt.label = mem.minterrupt.label or ""
 end
 -- END
+local debug = true
+-- CONFIGURE
+-- TODO: clean this mess up
 
+-- USER PERMISSIONS
+local permission = {
+    authorised_users = {"marghl"},
+    ignore = true -- leave this to false! if true no permission will be checked!
+}
+
+-- MODULES
+local debug = true -- debug uses time and gives penalty. set to false if n9ot needed
+local help = false -- Need help?
+
+-- QUARRY
+local quarry_directions = {"All", "North", "South", "East", "West"} -- Names of all possible Directions to Quarry first one is for all possibilitys
+local quarry_channels = {"n", "s", "o", "w"} -- digiline Channels for the quarrys, in the same order as the Names above
+local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Directions. use for tranlation
+local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
 
 
 if debug then
