@@ -31,7 +31,7 @@ if event.type == "program" then
 	mem.quarry.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
     mem.linebuffer = mem.linebuffer or {}
     mem.linebuffer.jumpdrive = mem.linebuffer.jumpdrive or {"Here the Jumpdrive's responses will be shown."}
-    mem.linebuffer.quarry = mem.linebuffer.quarry OR {"All quarry commands will be listed here"}
+    mem.linebuffer.quarry = mem.linebuffer.quarry or {"All quarry commands will be listed here"}
     mem.page = mem.page or 1
     mem.subpage = mem.subpage or 1
     mem.ts_lock = mem.ts_lock or 2
