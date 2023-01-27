@@ -9,53 +9,6 @@
 -- BOOTSTRAP
 -- Config just below
 local debug = true
-
-if event.type == "program" then
-	
-	
-	mem.m = mem.m or {}
-	mem.m.locations = mem.m.locations or {}
-	mem.m.location_num = mem.m.location_num or 1
-	mem.m.group = mem.m.group or {}
-	mem.m.filter = ""
-	mem.quarry = mem.quarry or {}
-	mem.quarry.powermon = mem.quarry.powermon or {acp = 10000, i = 1}
-	mem.quarry.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
-end
-
-if mem.linebuffer == nil then
-    mem.linebuffer = {}
-end
-if mem.linebuffer.jumpdrive == nil then
-    mem.linebuffer.jumpdrive = {"Here the Jumpdrive's responses will be shown."}
-end
-
-if mem.linebuffer.quarry == nil then
-    mem.linebuffer.quarry = {"All quarry commands will be listed here"}
-end
-
-
-if mem.page == nil then
-    mem.page = 1
-end
-if mem.subpage == nil then
-	mem.subpage = 1
-end
-
-if mem.ts_lock == nil then
-    mem.ts_lock = 2
-end
-
-
-if mem.instant_jump == nil then
-    mem.instant_jump = {distance = 50}
-end
-
-if mem.events == nil then
-    mem.events = {count = 0}
-end
--- END
-
 -- CONFIGURE
 -- TODO: clean this mess up
 
@@ -75,12 +28,10 @@ local quarry_channels = {"n", "s", "o", "w"} -- digiline Channels for the quarry
 local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Directions. use for tranlation
 local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
 -- bootstrapping the networks
-for i, x in ipairs(power_net_names) do
-	mem.quarry.powermon[x] = mem.quarry.powermon[x] or 0
-end
+
 	
 -- Touchscreen setup for debug. Change ONLY max_lines and monitor channel!
-local event_catcher = {touchscreen = {channel = "ts_ec", max_lines = 30}, monitor = {channel = "mon_ec"}}
+
 
 -- the digiline channel for the jumpdrive
 local jumpdrive = {channel = "jumpdrive"}
@@ -100,9 +51,43 @@ local touchscreen = {
         quarry = {memory = mem.linebuffer.quarry, max_lines = 20}
     }
 }
+if event.type == "program" then
+    -- the memory for locations	
+	mem.m = mem.m or {}
+	mem.m.locations = mem.m.locations or {}
+	mem.m.location_num = mem.m.location_num or 1
+	mem.m.group = mem.m.group or {}
+	mem.m.filter = ""
+    -- itemnum and item have to go here
+
+    -- The quarry has some data too
+	mem.quarry = mem.quarry or {}
+	mem.quarry.powermon = mem.quarry.powermon or {acp = 10000, i = 1}
+	mem.quarry.auto = {travel = 0, quarry = 0, distance = "16", radius = "8", steps = 1, active = false}
+    mem.linebuffer = mem.linebuffer or {}
+    mem.linebuffer.jumpdrive = mem.linebuffer.jumpdrive or {"Here the Jumpdrive's responses will be shown."}
+    mem.linebuffer.quarry = mem.linebuffer.quarry OR {"All quarry commands will be listed here"}
+    mem.page = mem.page or 1
+    mem.subpage = mem.subpage or 1
+    mem.ts_lock = mem.ts_lock or 2
+    mem.instant_jump = mem.instant_jump or {distance = 50}
+    mem.events = mem.events or {count = 0}
+    for i, x in ipairs(power_net_names) do
+        mem.quarry.powermon[x] = mem.quarry.powermon[x] or 0
+    end
+    mem.minterrupt = mem.minterrupt or {}
+	mem.minterrupt.label = mem.minterrupt.label or ""
+end
+-- END
+
+
 
 if debug then
     table.insert(touchscreen.pages, "Events")
+    local event_catcher = {
+        touchscreen = {channel = "ts_ec", max_lines = 30},
+        monitor = {channel = "mon_ec"}
+    }
 end
 if help then
     table.insert(touchscreen.pages, "Help")
@@ -133,14 +118,12 @@ permission.check = function(user)
 	return is_allowed
 end
 
-if event.type == "program" then
-	mem.minterrupt = mem.minterrupt or {}
-	mem.minterrupt.label = mem.minterrupt.label or ""
-end
+
 function minterrupt(time,label)
 -- i NEED iid!
 			mem.minterrupt.label = label
 			interrupt(time)
+            return
 end
 
 function table_concat(t1, t2)
@@ -580,18 +563,18 @@ local function update_page(page)
                     label = "",
                     --choices = targets,
                     listelements = mem.m.targets or {},
-                    selected_id = mem.itemnum or 1
+                    selected_id = mem.m.itemnum or 1
                 }
             )
 	    table.insert(
                 message,
                 {command = "addbutton", label = "filter", name = "location", X = 9.1, Y = 6.1, W = 1.4, H = 0.8}
             )
-	    --[[if mem.m.locations[mem.item].pos then
+	    --[[if mem.m.locations[mem.m.item].pos then
 	    table.insert(message, {command="addlabel",
-		label = "Coordinates : "  .. tostring(mem.m.locations[mem.item].pos.x) or "none" .. ", "
-							.. tostring(mem.m.locations[mem.item].pos.y) or "none" ..", "
-							..tostring(mem.m.locations[mem.item].pos.z) or "none",
+		label = "Coordinates : "  .. tostring(mem.m.locations[mem.m.item].pos.x) or "none" .. ", "
+							.. tostring(mem.m.locations[mem.m.item].pos.y) or "none" ..", "
+							..tostring(mem.m.locations[mem.m.item].pos.z) or "none",
 		X= 3,
 		Y= 7.2}
 	   )
@@ -1012,17 +995,17 @@ if event.type == "digiline" and event.channel == touchscreen.channel and event.m
                 --s = s:sub(5)
                 local n = tonumber(string.sub(s, 5))
                 if n then
-                    mem.itemnum = n
-                    mem.item = mem.m.targets[n] or ""
-                --digiline_send("mon_ec", mem.item)
+                    mem.m.itemnum = n
+                    mem.m.item = mem.m.targets[n] or ""
+                --digiline_send("mon_ec", mem.m.item)
                 end
             end
             if event.msg.location == "set as target" then
-                mem.jumpdrive.target = mem.m.locations[mem.item].pos
+                mem.jumpdrive.target = mem.m.locations[mem.m.item].pos
                 mem.page = 1
                 update_page("Drive")
             elseif event.msg.location == "delete" then
-                mem.m.locations[mem.item] = nil
+                mem.m.locations[mem.m.item] = nil
             elseif event.msg.location == "save" then
                 local save_name = ""
                 if event.msg.save == "" or nil then
