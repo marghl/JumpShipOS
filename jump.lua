@@ -15,24 +15,7 @@
 -- Touchscreen setup for debug. Change ONLY max_lines and monitor channel!
 
 
--- the digiline channel for the jumpdrive
-local jumpdrive = {channel = "jumpdrive"}
 
--- linebuffer to setup section
-
-
--- Touchscreen
--- Change ONLY channel
--- pages MUST contain at least "Drive" and "System"
-local touchscreen = {
-    channel = "ts",
-    pages = {"Drive", "Memory", "Quarry", "System"},
-    permissions = {"Open", "Users", "Locked"},
-    linebuffer = {
-        jumpdrive = {memory = mem.linebuffer.jumpdrive , max_lines = 20},
-        quarry = {memory = mem.linebuffer.quarry, max_lines = 20}
-    }
-}
 if event.type == "program" then
     -- the memory for locations	
 	mem.m = mem.m or {}
@@ -80,7 +63,24 @@ local quarry_directions = {"All", "North", "South", "East", "West"} -- Names of 
 local quarry_channels = {"n", "s", "o", "w"} -- digiline Channels for the quarrys, in the same order as the Names above
 local cardinal_directions = {"North", "South", "East", "West"} -- cardinal Directions. use for tranlation
 local power_net_names = {"net_1","net_2"} -- digiline Channel(s) of the powermonitor(s) to check for rumming Quarrys
+-- the digiline channel for the jumpdrive
+local jumpdrive = {channel = "jumpdrive"}
 
+-- linebuffer to setup section
+
+
+-- Touchscreen
+-- Change ONLY channel
+-- pages MUST contain at least "Drive" and "System"
+local touchscreen = {
+    channel = "ts",
+    pages = {"Drive", "Memory", "Quarry", "System"},
+    permissions = {"Open", "Users", "Locked"},
+    linebuffer = {
+        jumpdrive = {memory = mem.linebuffer.jumpdrive , max_lines = 20},
+        quarry = {memory = mem.linebuffer.quarry, max_lines = 20}
+    }
+}
 
 if debug then
     table.insert(touchscreen.pages, "Events")
